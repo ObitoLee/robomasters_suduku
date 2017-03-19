@@ -1,5 +1,5 @@
-#include<opencv.hpp>
-#include<iostream>
+﻿#include <opencv2/opencv.hpp>
+#include <iostream>
 #include "fstream"
 #include "getConfig.h"
 #include <sstream>
@@ -7,8 +7,7 @@
 using namespace std;
 using namespace cv;
 
-#define __unix__
-//#define DEBUG
+#define DEBUG
 
 #ifdef __unix__
 #include "serialport.hpp"
@@ -23,8 +22,8 @@ int a = 170;//cany参数
 int b = 11;
 
 Mat_<float> intrinsic_matrix = (Mat_<float>(3, 3) << 530.31526, 0, 368.02664,
-                                0, 531.36963, 274.08000,
-                                0, 0, 1);
+						        0, 531.36963, 274.08000,
+						        0, 0, 1);
 Mat_<float> distCoeffs = (Mat_<float>(5, 1) << -0.42437, 0.17281, -0.00660, 0.00088, 0.00000);
 
 long matSum(Mat src)
@@ -63,12 +62,29 @@ void SudokuSort(vector<SudokuGrid> &sudoku)
                     swap(sudoku[3 * k + j], sudoku[3 * k + j + 1]);
 }
 
-int main()
+int main(int argc,char* argv[])
 {
-    VideoCapture cap(0);//打开摄像头
-    // VideoCapture cap("2.avi");
+    VideoCapture cap;
+    if(argc == 1)
+        cap.open(0);//打开摄像头
+    else
+        cap.open(argv[1]);
 
-    map<string, string> m;
+    if (!cap.isOpened())
+    {
+        cerr << "\n\e[31m\e[1m ERROR:Can't open camera or video! \e[0m\n\n";
+        return -1;
+    }
+
+    Mat src, src0, thresh;
+
+    ofstream out("out.txt");
+#ifdef DEBUG
+    namedWindow("src", CV_WINDOW_AUTOSIZE);
+    cvCreateTrackbar("cany", "src", &a, 200);
+    cvCreateTrackbar("threshold", "src", &b, 100);
+#else
+	map<string, string> m;
     ReadConfig("video.cfg", m);//读取配置文件
     string videoName;
     videoName += m["num"];
@@ -76,20 +92,6 @@ int main()
     VideoWriter writer(videoName, CV_FOURCC('M', 'J', 'P', 'G'), 25, Size(640, 480));
     m["num"] = to_string( atoi(m["num"].c_str()) + 1);
     WriteConfig("video.cfg",m);//写入配置文件
-
-    if (!cap.isOpened())
-    {
-        cerr << "can't open camera!\n";
-        return -1;
-    }
-    Mat src, src0, thresh;
-
-
-    ofstream out("out.txt");
-#ifdef DEBUG
-    namedWindow("src", CV_WINDOW_AUTOSIZE);
-    cvCreateTrackbar("cany", "src", &a, 200);
-    cvCreateTrackbar("threshold", "src", &b, 100);
 #endif // DEBUG
 
     bool paused = false;
@@ -107,7 +109,10 @@ int main()
                 cerr << "read error!!\n";
                 return -1;
             }
-            undistort(src0, src, intrinsic_matrix, distCoeffs);
+			
+			if(argc == 1)
+            	undistort(src0, src, intrinsic_matrix, distCoeffs);
+
 #ifndef DEBUG
             writer<<src;
 #endif // DEBUG
