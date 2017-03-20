@@ -66,9 +66,28 @@ int main(int argc,char* argv[])
 {
     VideoCapture cap;
     if(argc == 1)
-        cap.open(0);//打开摄像头
-    else
-        cap.open(argv[1]);
+    {
+		cout << "usage：use \e[31m\e[1m./sudoku_recgnize test1.avi \e[0mto test a video ,\n"
+			<< "or use \e[31m\e[1m./sudoku_recgnize 0 \e[0mto open a camera named index 0 .\n "<< endl;
+		return  0;
+		//cap.open(0);//打开摄像头
+	}
+    else if(argc == 2)
+    {
+		if(strlen(argv[1]) == 1)
+		{
+			int index = atoi(argv[1]);
+			cap.open(index);
+		}
+		else
+			cap.open(argv[1]);
+	}
+	else
+	{
+		cout << "Too many parameters！see usage：use \e[31m\e[1m./sudoku_recgnize test1.avi \e[0mto test a video ,\n"
+			<< "or use \e[31m\e[1m./sudoku_recgnize 0 \e[0mto open a camera named index 0 .\n "<< endl;
+		return  0;
+	}
 
     if (!cap.isOpened())
     {
@@ -110,8 +129,11 @@ int main(int argc,char* argv[])
                 return -1;
             }
 			
-			if(argc == 1)
+			if(strlen(argv[1]) == 1)
             	undistort(src0, src, intrinsic_matrix, distCoeffs);
+			else
+				src = src0;
+				
 
 #ifndef DEBUG
             writer<<src;
@@ -197,48 +219,48 @@ int main(int argc,char* argv[])
 
                 if (sudoku.size() > 9)//检测到大于9个，进行剔除
                 {
-//
-//                    vector<Point2f> rectSize;//对矩形尺寸聚类
-//
-//                    for (const auto& item : sudoku)
-//                        rectSize.push_back(item.originSize);
-//
-//                    const int K = 2;//聚类的类别数量，即Lable的取值
-//                    Mat Label, Center;
-//                    kmeans(rectSize, K, Label, TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 10, 1.0),
-//                           1, KMEANS_PP_CENTERS, Center);//聚类3次，取结果最好的那次，聚类的初始化采用PP特定的随机算法。
-//                           cout<<2222<<endl;
-//                    int LableNum[K] = { 0 };//不同类别包含的成员数量，如类别0有8个，类别1有2个。。。。
-//                    int sudoLable;//代表九宫格的标签
-//                    for (int i = 0; i < rectSize.size(); ++i)
-//                    {
-//                        sudoku[i].lable = Label.at<int>(i);
-//#ifdef DEBUG
-//                        cout << rectSize[i] << "\t-->\t" << sudoku[i].lable << endl;
-//#endif // DEBUG
-//                        for (int j = 0; j < K; ++j)
-//                            if (sudoku[i].lable == j)
-//                            {
-//                                LableNum[j]++;
-//                                break;
-//                            }
-//                    }
-//
-//                    sudoLable = *max_element(LableNum, LableNum + K);
-//
-//                    for (int j = 0; j < K; ++j)
-//                        if (LableNum[j] == sudoLable)
-//                        {
-//                            sudoLable = j;
-//                            break;
-//                        }
-//
-//                    vector<SudokuGrid> sudokuTemp;//九宫格
-//                    for (int i = 0; i < rectSize.size(); ++i)
-//                        if (sudoku[i].lable == sudoLable)
-//                            sudokuTemp.push_back(sudoku[i]);
-//
-//                    sudoku.swap(sudokuTemp);
+
+                   vector<Point2f> rectSize;//对矩形尺寸聚类
+
+                   for (const auto& item : sudoku)
+                       rectSize.push_back(item.originSize);
+
+                   const int K = 2;//聚类的类别数量，即Lable的取值
+                   Mat Label, Center;
+                   kmeans(rectSize, K, Label, TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 10, 1.0),
+                          1, KMEANS_PP_CENTERS, Center);//聚类3次，取结果最好的那次，聚类的初始化采用PP特定的随机算法。
+
+                   int LableNum[K] = { 0 };//不同类别包含的成员数量，如类别0有8个，类别1有2个。。。。
+                   int sudoLable;//代表九宫格的标签
+                   for (int i = 0; i < rectSize.size(); ++i)
+                   {
+                       sudoku[i].lable = Label.at<int>(i);
+#ifdef DEBUG
+                       cout << rectSize[i] << "\t-->\t" << sudoku[i].lable << endl;
+#endif // DEBUG
+                       for (int j = 0; j < K; ++j)
+                           if (sudoku[i].lable == j)
+                           {
+                               LableNum[j]++;
+                               break;
+                           }
+                   }
+
+                   sudoLable = *max_element(LableNum, LableNum + K);
+
+                   for (int j = 0; j < K; ++j)
+                       if (LableNum[j] == sudoLable)
+                       {
+                           sudoLable = j;
+                           break;
+                       }
+
+                   vector<SudokuGrid> sudokuTemp;//九宫格
+                   for (int i = 0; i < rectSize.size(); ++i)
+                       if (sudoku[i].lable == sudoLable)
+                           sudokuTemp.push_back(sudoku[i]);
+
+                   sudoku.swap(sudokuTemp);
 //                    sudokuTemp.~vector<SudokuGrid>();
 //                    //cout << "九宫格属于类别：" << sudoLable << endl;
                 }
